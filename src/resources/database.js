@@ -6,14 +6,14 @@ class Database {
     this._connection = mysql.createConnection({
       host: 'localhost',
       port: 3306,
-      user: 'guest',
-      password: '',
-      database: 'agenda-petshop'
+      user: 'root',
+      password: '123123',
+      database: 'petshop'
     });
     console.log('DATABASE: Conexao criada');
   }
 
-  get connection() {
+  getConnection() {
     return this._connection;
   }
 
@@ -50,7 +50,7 @@ class Database {
     });
   }
 
-  saveAtendimento(atendimento, response) {
+  addAtendimento(response, atendimento) {
     atendimento.data = moment(atendimento.data, 'DD/MM/YYYY').format('YYYY-MM-DD HH-MM-SS');
     const dataCriacao = new Date();
     const dataEhValida = moment(atendimento.data, 'YYYY-MM-DD HH-MM-SS').isSameOrAfter(dataCriacao);
@@ -69,16 +69,71 @@ class Database {
       });
     } else {
       let message = {}
-      if(!dataEhValida){
+      if (!dataEhValida) {
         message.data = 'Data invalida. Esta deve ser maior que a data atual';
       }
-      if(!clienteEhValido){
+      if (!clienteEhValido) {
         message.cliente = 'Cliente invalido. Sao necessarios mais de 2 letras para o nome';
       }
       response.status(400).json(message);
     }
   }
 
+  sendAtendimentos(response) {
+    const sql = 'SELECT * FROM Atendimento';
+    this._connection.query(sql, (error, result) => {
+      if (error) {
+        console.log('DATABASE: ' + error)
+        response.status(400).json(error);
+      } else {
+        response.status(201).json(result);
+      }
+    });
+  }
+
+  sendAtendimento(response, id) {
+    const sql = 'SELECT * FROM Atendimento WHERE id=?';
+    this._connection.query(sql, [id], (error, result) => {
+      if (error) {
+        console.log('DATABASE: ' + error)
+        response.status(400).json(error);
+      } else {
+        response.status(201).json(result);
+      }
+    });
+  }
+
+  patchAtendimento(response, atendimento, id) {
+    const sql = 'UPDATE Atendimento SET ? WHERE id=?';
+    
+    if (atendimento.data) {
+      atendimento.data = moment(atendimento.data, 'YYYY-MM-DDTHH:MM:SS.000Z').format('YYYY-MM-DD HH-MM-SS');
+    }
+    if (atendimento.dataCriacao) {
+      atendimento.dataCriacao = moment(atendimento.dataCriacao, 'YYYY-MM-DDTHH:MM:SS.000Z').format('YYYY-MM-DD HH-MM-SS');
+    }
+
+    this._connection.query(sql, [atendimento, id], (error, result) => {
+      if (error) {
+        console.log('DATABASE: ' + error)
+        response.status(400).json(error);
+      } else {
+        response.status(201).json(result);
+      }
+    });
+  }
+
+  deleteAtendimento(response, id) {
+    const sql = 'DELETE FROM Atendimento WHERE id=?';
+    this._connection.query(sql, [id], (error, result) => {
+      if (error) {
+        console.log('DATABASE: ' + error)
+        response.status(400).json(error);
+      } else {
+        response.status(201).json(result);
+      }
+    });
+  }
 
 }
 
